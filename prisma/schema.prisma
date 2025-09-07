@@ -20,9 +20,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  
-  assignedCards Card[]
-  createdCards  Card[] @relation("CardCreator")
+  assignedCards Card[]    @relation("CardAssignee")
+  createdCards  Card[]    @relation("CardCreator")
   cardLogs      CardLog[]
 
   @@map("users")
@@ -35,7 +34,6 @@ model Board {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  
   columns Column[]
 
   @@map("boards")
@@ -50,7 +48,6 @@ model Column {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
- 
   board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
   cards Card[]
 
@@ -71,10 +68,9 @@ model Card {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-
   column   Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
-  assignee User?     @relation(fields: [assigneeId], references: [id])
-  creator  User      @relation("CardCreator", fields: [creatorId], references: [id])
+  assignee User?     @relation("CardAssignee", fields: [assigneeId], references: [clerkId])
+  creator  User      @relation("CardCreator", fields: [creatorId], references: [clerkId])
   logs     CardLog[]
   attachments CardAttachment[]
 
@@ -91,7 +87,6 @@ model CardAttachment {
 
   createdAt DateTime @default(now())
 
-
   card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
   @@map("card_attachments")
@@ -106,7 +101,7 @@ model CardLog {
 
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [clerkId])
   card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
   @@map("card_logs")
