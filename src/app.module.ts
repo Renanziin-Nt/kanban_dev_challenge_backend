@@ -8,11 +8,10 @@ import { ColumnsModule } from './columns/columns.module';
 import { BoardsModule } from './boards/boards.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { PrismaModule } from './prisma/prisma.module';
-import { PrismaModule } from './prisma/prisma.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, BoardsModule, ColumnsModule, CardsModule, UploadsModule],
+  imports: [PrismaModule, AuthModule, UsersModule, BoardsModule, ColumnsModule, CardsModule, UploadsModule, WebhooksModule],
   controllers: [AppController],
   providers: [AppService],
 })
