@@ -5,6 +5,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
+  logger: any;
   constructor(private prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -58,23 +59,51 @@ export class UsersService {
       where: { id },
     });
   }
-
+  
+  async removeByClerkId(clerkId: string) {
+    return this.prisma.user.delete({
+      where: { clerkId },
+    });
+  }
   async syncWithClerk(clerkUser: any) {
-    const existingUser = await this.findByClerkId(clerkUser.id);
+  try {
+    const { id, email_addresses, first_name, last_name, image_url } = clerkUser;
     
+    // CORREÇÃO: Verificar se email_addresses existe e tem itens
+    const email = email_addresses && email_addresses.length > 0 
+      ? email_addresses[0]?.email_address 
+      : null; // ou 'no-email@example.com'
+
+    // Se não tiver email, não podemos criar o usuário
+    if (!email) {
+      this.logger.error(`Não é possível criar usuário ${id} sem email`);
+      throw new Error('Email é obrigatório');
+    }
+
+    const name = first_name && last_name 
+      ? `${first_name} ${last_name}`.trim()
+      : first_name || last_name || 'Usuário';
+
+    const existingUser = await this.findByClerkId(id);
+
     if (existingUser) {
       return this.update(existingUser.id, {
-        email: clerkUser.emailAddresses[0]?.emailAddress,
-        name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
-        imageUrl: clerkUser.imageUrl,
+        email,
+        name,
+        imageUrl: image_url,
       });
     }
 
     return this.create({
-      clerkId: clerkUser.id,
-      email: clerkUser.emailAddresses[0]?.emailAddress,
-      name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
-      imageUrl: clerkUser.imageUrl,
+      clerkId: id,
+      email,
+      name,
+      imageUrl: image_url,
     });
+
+  } catch (error) {
+    this.logger.error('Erro no syncWithClerk:', error);
+    throw error;
   }
+}
 }
