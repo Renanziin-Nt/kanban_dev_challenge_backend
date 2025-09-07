@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createClerkClient } from '@clerk/backend';
+import { createClerkClient, verifyToken } from '@clerk/backend';
 
 @Injectable()
 export class ClerkService {
@@ -14,9 +14,13 @@ export class ClerkService {
 
   async verifyToken(token: string) {
     try {
-      const { payload } = await this.clerk.verifyToken(token);
+      const  payload  =  await verifyToken(token, {
+        secretKey: this.configService.get('CLERK_SECRET_KEY'),
+      });
+      
       return payload;
     } catch (error) {
+   
       throw new Error('Invalid token');
     }
   }
