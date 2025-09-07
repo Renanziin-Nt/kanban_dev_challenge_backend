@@ -14,12 +14,13 @@ export class CardLogsService {
   constructor(private prisma: PrismaService) {}
 
   async createLog(createLogDto: CreateLogDto) {
+    console.log('CreateLogDto:', createLogDto);
     return this.prisma.cardLog.create({
       data: createLogDto,
       include: {
         user: {
           select: {
-            id: true,
+            clerkId: true,
             name: true,
             email: true,
             imageUrl: true,

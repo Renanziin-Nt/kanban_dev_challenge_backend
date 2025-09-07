@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCardDto } from './dto/create-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
@@ -15,7 +15,6 @@ export class CardsService {
   ) {}
 
   async create(createCardDto: CreateCardDto, userId: string) {
-
     const lastCard = await this.prisma.card.findFirst({
       where: { columnId: createCardDto.columnId },
       orderBy: { position: 'desc' },
@@ -50,13 +49,17 @@ export class CardsService {
       },
     });
 
-
-    await this.cardLogsService.createLog({
-      action: LogAction.CREATED,
-      cardId: card.id,
-      userId,
-      details: JSON.stringify({ title: card.title }),
-    });
+    // Log FORA da transação principal
+    try {
+      await this.cardLogsService.createLog({
+        action: LogAction.CREATED,
+        cardId: card.id,
+        userId,
+        details: JSON.stringify({ title: card.title }),
+      });
+    } catch (error) {
+      console.error('Failed to create log for card creation:', error);
+    }
 
     return card;
   }
@@ -134,6 +137,10 @@ export class CardsService {
       where: { id },
     });
 
+    if (!existingCard) {
+      throw new NotFoundException(`Card with ID ${id} not found`);
+    }
+
     const updatedCard = await this.prisma.card.update({
       where: { id },
       data: updateCardDto,
@@ -158,36 +165,41 @@ export class CardsService {
       },
     });
 
+    // Criar logs FORA da operação principal
+    try {
+      const changes: Record<string, any> = {};
+      if (existingCard.title !== updatedCard.title) changes.title = { from: existingCard.title, to: updatedCard.title };
+      if (existingCard.description !== updatedCard.description) changes.description = { from: existingCard.description, to: updatedCard.description };
+      if (existingCard.priority !== updatedCard.priority) changes.priority = { from: existingCard.priority, to: updatedCard.priority };
+      
+      if (existingCard.assigneeId !== updatedCard.assigneeId) {
+        if (updatedCard.assigneeId) {
+          await this.cardLogsService.createLog({
+            action: LogAction.ASSIGNED,
+            cardId: id,
+            userId,
+            details: JSON.stringify({ assigneeId: updatedCard.assigneeId }),
+          });
+        } else {
+          await this.cardLogsService.createLog({
+            action: LogAction.UNASSIGNED,
+            cardId: id,
+            userId,
+            details: JSON.stringify({ previousAssigneeId: existingCard.assigneeId }),
+          });
+        }
+      }
 
-    const changes: Record<string, any> = {};
-    if (existingCard.title !== updatedCard.title) changes.title = { from: existingCard.title, to: updatedCard.title };
-    if (existingCard.description !== updatedCard.description) changes.description = { from: existingCard.description, to: updatedCard.description };
-    if (existingCard.priority !== updatedCard.priority) changes.priority = { from: existingCard.priority, to: updatedCard.priority };
-    if (existingCard.assigneeId !== updatedCard.assigneeId) {
-      if (updatedCard.assigneeId) {
+      if (Object.keys(changes).length > 0) {
         await this.cardLogsService.createLog({
-          action: LogAction.ASSIGNED,
+          action: LogAction.UPDATED,
           cardId: id,
           userId,
-          details: JSON.stringify({ assigneeId: updatedCard.assigneeId }),
-        });
-      } else {
-        await this.cardLogsService.createLog({
-          action: LogAction.UNASSIGNED,
-          cardId: id,
-          userId,
-          details: JSON.stringify({ previousAssigneeId: existingCard.assigneeId }),
+          details: JSON.stringify(changes),
         });
       }
-    }
-
-    if (Object.keys(changes).length > 0) {
-      await this.cardLogsService.createLog({
-        action: LogAction.UPDATED,
-        cardId: id,
-        userId,
-        details: JSON.stringify(changes),
-      });
+    } catch (error) {
+      console.error('Failed to create logs for card update:', error);
     }
 
     return updatedCard;
@@ -196,35 +208,54 @@ export class CardsService {
   async remove(id: string, userId: string) {
     const card = await this.prisma.card.findUnique({ where: { id } });
     
-    await this.cardLogsService.createLog({
-      action: LogAction.DELETED,
-      cardId: id,
-      userId,
-      details: JSON.stringify({ title: card.title }),
-    });
-
-    return this.prisma.card.delete({
+    if (!card) {
+      throw new NotFoundException(`Card with ID ${id} not found`);
+    }
+    
+    const deletedCard = await this.prisma.card.delete({
       where: { id },
     });
+
+    // Log FORA da operação principal
+    try {
+      await this.cardLogsService.createLog({
+        action: LogAction.DELETED,
+        cardId: id,
+        userId,
+        details: JSON.stringify({ title: card.title }),
+      });
+    } catch (error) {
+      console.error('Failed to create log for card deletion:', error);
+    }
+
+    return deletedCard;
   }
 
   async moveCard(moveCardDto: MoveCardDto, userId: string) {
     const { cardId, sourceColumnId, targetColumnId, newPosition } = moveCardDto;
-
-    return this.prisma.$transaction(async (tx) => {
-
+    console.log('MoveCardDto:', userId);
+    
+    // Transação APENAS para as operações essenciais de movimentação
+    const movedCard = await this.prisma.$transaction(async (tx) => {
       if (sourceColumnId !== targetColumnId) {
+        // Get the card being moved to get its current position
+        const cardToMove = await tx.card.findUnique({ where: { id: cardId } });
+        if (!cardToMove) {
+          throw new NotFoundException(`Card with ID ${cardId} not found`);
+        }
+
+        // Adjust positions in source column
         await tx.card.updateMany({
           where: {
             columnId: sourceColumnId,
-            position: { gt: (await tx.card.findUnique({ where: { id: cardId } })).position },
+            position: { gt: cardToMove.position },
           },
           data: {
             position: { decrement: 1 },
           },
         });
 
-
+        // Adjust positions in target column
         await tx.card.updateMany({
           where: {
             columnId: targetColumnId,
@@ -235,12 +266,16 @@ export class CardsService {
           },
         });
       } else {
-
+        // Moving within the same column
         const currentCard = await tx.card.findUnique({ where: { id: cardId } });
+        if (!currentCard) {
+          throw new NotFoundException(`Card with ID ${cardId} not found`);
+        }
+        
         const currentPosition = currentCard.position;
 
         if (newPosition > currentPosition) {
-
+          // Moving down
           await tx.card.updateMany({
             where: {
               columnId: targetColumnId,
@@ -251,7 +286,7 @@ export class CardsService {
             },
           });
         } else if (newPosition < currentPosition) {
-
+          // Moving up
           await tx.card.updateMany({
             where: {
               columnId: targetColumnId,
@@ -264,8 +299,8 @@ export class CardsService {
         }
       }
 
-
-      const movedCard = await tx.card.update({
+      // Update the card's position and column
+      return tx.card.update({
         where: { id: cardId },
         data: {
           columnId: targetColumnId,
@@ -290,8 +325,12 @@ export class CardsService {
           },
         },
       });
+    }, {
+      timeout: 10000, // 10 segundos de timeout
+    });
 
-
+    // Log FORA da transação - pode falhar sem afetar a movimentação
+    try {
       await this.cardLogsService.createLog({
         action: LogAction.MOVED,
         cardId,
@@ -302,21 +341,44 @@ export class CardsService {
           position: newPosition,
         }),
       });
+    } catch (error) {
+      console.error('Failed to create log for card move:', error);
+      // Não re-throw o erro - a movimentação foi bem-sucedida
+    }
 
-      return movedCard;
-    });
+    return movedCard;
   }
 
   async reorderCards(columnId: string, reorderDto: ReorderCardsDto) {
     const { cardOrders } = reorderDto;
 
+    // Forma 1: Array de operações (sem suporte a timeout customizado)
     return this.prisma.$transaction(
       cardOrders.map(({ cardId, position }) =>
         this.prisma.card.update({
           where: { id: cardId },
           data: { position },
         }),
-      ),
+      )
     );
+  }
+
+  // Versão alternativa com callback function (se precisar de timeout customizado)
+  async reorderCardsWithTimeout(columnId: string, reorderDto: ReorderCardsDto) {
+    const { cardOrders } = reorderDto;
+
+    return this.prisma.$transaction(async (tx) => {
+      const updates = await Promise.all(
+        cardOrders.map(({ cardId, position }) =>
+          tx.card.update({
+            where: { id: cardId },
+            data: { position },
+          })
+        )
+      );
+      return updates;
+    }, {
+      timeout: 10000,
+    });
   }
 }
