@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@clerk/backend": "^2.12.0",
+    "@clerk/clerk-sdk-node": "^4.13.23",
     "@nestjs/common": "^11.1.6",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.6",
@@ -36,6 +37,7 @@
     "helmet": "^8.1.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
+    "svix": "^1.76.1",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

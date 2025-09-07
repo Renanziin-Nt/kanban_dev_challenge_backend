@@ -1,98 +1,374 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Kanban Tech Challenge - Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Sistema de Quadro Kanban colaborativo desenvolvido com NestJS, Prisma, e PostgreSQL.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🚀 Tecnologias Utilizadas
 
-## Description
+### Backend
+- **NestJS** - Framework Node.js para APIs escaláveis
+- **TypeScript** - Linguagem de programação
+- **Prisma** - ORM moderno para TypeScript
+- **PostgreSQL** - Banco de dados relacional
+- **Clerk** - Autenticação e gerenciamento de usuários
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### Infraestrutura & Deploy
+- **AWS ECS** - Container orchestration
+- **AWS ECR** - Container registry
+- **AWS Application Load Balancer** - Load balancing
+- **AWS VPC** - Rede privada virtual
+- **Supabase** - PostgreSQL hospedado
+- **GitHub Actions** - CI/CD
 
-## Project setup
+### Node.js
+- **Versão**: 22.18.0
 
+## 📋 Funcionalidades
+
+### Core Features
+- ✅ Autenticação com Clerk
+- ✅ Quadro Kanban dinâmico
+- ✅ Colunas editáveis e reordenáveis
+- ✅ Cards com drag & drop
+- ✅ Sistema de prioridades (Alta, Média, Baixa)
+- ✅ Atribuição de tarefas
+- ✅ Editor rich text para descrições
+- ✅ Upload de imagens
+- ✅ Histórico de atividades (logs)
+- ✅ API RESTful completa
+
+### Recursos Técnicos
+- ✅ Swagger/OpenAPI documentation
+- ✅ Validação de dados com class-validator
+- ✅ Tratamento de erros
+- ✅ Health check endpoint
+- ✅ Logs estruturados
+- ✅ Transações de banco de dados
+- ✅ Containerização com Docker
+
+## 🛠️ Setup Local
+
+### Pré-requisitos
+- Node.js 22.18.0
+- Docker & Docker Compose
+- Conta no Clerk (para autenticação)
+- Conta no Supabase (para PostgreSQL)
+
+### 1. Clone o repositório
 ```bash
-$ npm install
+git clone <repository-url>
+cd kanban-tech-challenge-backend
 ```
 
-## Compile and run the project
-
+### 2. Instale as dependências
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
-
+### 3. Configure as variáveis de ambiente
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cp .env.example .env
 ```
 
-## Deployment
+Edite o arquivo `.env` com suas configurações:
+```env
+# Application
+NODE_ENV=development
+PORT=3001
+FRONTEND_URL=http://localhost:3000
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+# Database (Supabase PostgreSQL)
+DATABASE_URL="postgresql://username:password@db.supabase.co:5432/postgres?schema=public"
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+# Clerk Authentication
+CLERK_SECRET_KEY=sk_test_...
+CLERK_PUBLISHABLE_KEY=pk_test_...
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# File Uploads
+UPLOAD_DIR=./uploads
+MAX_FILE_SIZE=5242880
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 4. Configure o banco de dados
+```bash
+# Gerar o Prisma Client
+npm run prisma:generate
 
-## Resources
+# Executar migrações
+npm run prisma:migrate
 
-Check out a few resources that may come in handy when working with NestJS:
+# (Opcional) Abrir Prisma Studio
+npm run prisma:studio
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### 5. Execute a aplicação
 
-## Support
+#### Desenvolvimento local
+```bash
+npm run start:dev
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+#### Com Docker Compose
+```bash
+docker-compose up -d
+```
 
-## Stay in touch
+A API estará disponível em: `http://localhost:3001`
+Documentação Swagger: `http://localhost:3001/api/docs`
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## 📚 Estrutura da API
 
-## License
+### Endpoints Principais
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+#### Authentication
+- Todas as rotas (exceto `/health`) requerem token JWT do Clerk
+
+#### Boards
+- `GET /api/v1/boards` - Listar quadros
+- `POST /api/v1/boards` - Criar quadro
+- `GET /api/v1/boards/:id` - Obter quadro específico
+- `PATCH /api/v1/boards/:id` - Atualizar quadro
+- `DELETE /api/v1/boards/:id` - Deletar quadro
+
+#### Columns
+- `GET /api/v1/columns?boardId=:id` - Listar colunas de um quadro
+- `POST /api/v1/columns` - Criar coluna
+- `PATCH /api/v1/columns/:id` - Atualizar coluna
+- `DELETE /api/v1/columns/:id` - Deletar coluna
+- `POST /api/v1/columns/reorder/:boardId` - Reordenar colunas
+
+#### Cards
+- `GET /api/v1/cards` - Listar cards
+- `POST /api/v1/cards` - Criar card
+- `GET /api/v1/cards/:id` - Obter card específico
+- `PATCH /api/v1/cards/:id` - Atualizar card
+- `DELETE /api/v1/cards/:id` - Deletar card
+- `POST /api/v1/cards/move` - Mover card (drag & drop)
+- `GET /api/v1/cards/:id/logs` - Histórico do card
+- `GET /api/v1/cards/board/:boardId/activity` - Atividade do quadro
+
+#### Users
+- `GET /api/v1/users/me` - Perfil do usuário atual
+- `GET /api/v1/users` - Listar usuários
+
+#### Uploads
+- `POST /api/v1/uploads/:cardId` - Upload de arquivo
+- `GET /api/v1/uploads/card/:cardId` - Listar anexos do card
+- `GET /api/v1/uploads/file/:filename` - Servir arquivo
+- `DELETE /api/v1/uploads/attachment/:id` - Deletar anexo
+
+## 🏗️ Implementação de Drag & Drop
+
+O sistema de drag & drop foi implementado com:
+
+1. **Posicionamento baseado em índices**: Cada card tem uma `position` numérica
+2. **Transações de banco**: Movimentações são atômicas
+3. **Reordenação automática**: Posições são recalculadas automaticamente
+4. **Logs de atividade**: Todo movimento é registrado
+
+### Como funciona o movimento de cards:
+```typescript
+// Movimento entre colunas diferentes
+1. Decrementar posições na coluna origem
+2. Incrementar posições na coluna destino
+3. Atualizar card com nova coluna e posição
+4. Registrar log da movimentação
+
+// Movimento na mesma coluna
+1. Calcular direção do movimento (cima/baixo)
+2. Ajustar posições dos cards afetados
+3. Atualizar posição do card movido
+```
+
+## 📊 Gerenciamento de Estado
+
+### Estado das Colunas
+- Posições são mantidas em ordem crescente
+- Reordenação automática quando colunas são adicionadas/removidas
+
+### Estado dos Cards
+- Sistema de posicionamento relativo dentro de cada coluna
+- Transações garantem consistência durante movimentações
+- Logs completos de todas as alterações
+
+## 🔄 Pipeline de CI/CD
+
+### Estratégia de Deploy
+
+1. **Desenvolvimento Local**
+   - Docker Compose para ambiente completo
+   - Hot reload com `npm run start:dev`
+   - Banco PostgreSQL local
+
+2. **CI/CD Pipeline (GitHub Actions)**
+   ```yaml
+   Trigger: Push para main branch
+   Steps:
+   1. Run tests & linting
+   2. Build Docker image
+   3. Push to AWS ECR
+   4. Update ECS task definition
+   5. Deploy to ECS cluster
+   ```
+
+3. **Infraestrutura AWS**
+   - **VPC**: Rede isolada com subnets públicas
+   - **ECS Fargate**: Containers serverless
+   - **Application Load Balancer**: Distribuição de tráfego
+   - **ECR**: Registry privado de containers
+   - **CloudWatch**: Logs e monitoramento
+
+### Próximos Passos para Melhorias
+
+Se houvesse mais tempo, implementaria:
+
+1. **Performance & Escalabilidade**
+   - Cache com Redis para consultas frequentes
+   - Pagination para listas grandes
+   - WebSockets para atualizações em tempo real
+   - CDN para servir arquivos estáticos
+
+2. **Funcionalidades Avançadas**
+   - Sistema de comentários nos cards
+   - Notificações por email
+   - Templates de quadros
+   - Relatórios e analytics
+   - Busca avançada e filtros
+
+3. **Segurança & Observabilidade**
+   - Rate limiting
+   - Audit logs detalhados
+   - Métricas de performance
+   - Alertas de monitoramento
+   - Backup automático
+
+4. **DevOps & Infraestrutura**
+   - Auto-scaling baseado em métricas
+   - Blue-green deployment
+   - Disaster recovery
+   - Multi-region deployment
+
+## 🔧 Scripts Disponíveis
+
+```bash
+# Desenvolvimento
+npm run start:dev          # Iniciar em modo desenvolvimento
+npm run start:debug       # Iniciar com debugger
+
+# Build & Produção
+npm run build              # Build da aplicação
+npm run start:prod         # Iniciar em modo produção
+
+# Testes
+npm run test               # Executar testes unitários
+npm run test:watch         # Testes em modo watch
+npm run test:cov           # Testes com coverage
+npm run test:e2e           # Testes end-to-end
+
+# Prisma
+npm run prisma:generate    # Gerar Prisma Client
+npm run prisma:migrate     # Executar migrações
+npm run prisma:studio      # Abrir Prisma Studio
+npm run prisma:deploy      # Deploy migrações (produção)
+
+# Code Quality
+npm run lint               # Executar ESLint
+npm run format             # Formatar código
+```
+
+## 🐳 Docker Commands
+
+```bash
+# Desenvolvimento com Docker Compose
+docker-compose up -d                    # Iniciar todos os serviços
+docker-compose logs -f backend          # Ver logs do backend
+docker-compose exec backend npm run prisma:migrate  # Executar migrações
+
+# Build manual
+docker build -t kanban-backend .
+docker run -p 3001:3001 kanban-backend
+```
+
+## 🌐 Deploy na AWS
+
+### Pré-requisitos para Deploy
+1. AWS CLI configurado
+2. Terraform instalado
+3. Secrets configurados no GitHub:
+   - `AWS_ACCESS_KEY_ID`
+   - `AWS_SECRET_ACCESS_KEY`
+
+### Passos para Deploy
+
+1. **Provisionar infraestrutura**
+```bash
+cd terraform
+terraform init
+terraform plan
+terraform apply
+```
+
+2. **Configurar secrets no AWS Systems Manager**
+```bash
+aws ssm put-parameter --name "/kanban/database-url" --value "your-supabase-url" --type "SecureString"
+aws ssm put-parameter --name "/kanban/clerk-secret-key" --value "your-clerk-key" --type "SecureString"
+aws ssm put-parameter --name "/kanban/frontend-url" --value "your-frontend-url" --type "SecureString"
+```
+
+3. **Push para main branch**
+```bash
+git push origin main
+# GitHub Actions irá automaticamente fazer o deploy
+```
+
+## 🎯 Justificativa das Escolhas Tecnológicas
+
+### NestJS
+- **Escalabilidade**: Arquitetura modular inspirada no Angular
+- **TypeScript nativo**: Type safety e melhor DX
+- **Ecossistema robusto**: Decorators, Guards, Interceptors
+- **Swagger integrado**: Documentação automática
+
+### Prisma
+- **Type-safe**: Client gerado automaticamente
+- **Migrations**: Controle de versão do schema
+- **Studio**: Interface visual para o banco
+- **Performance**: Query optimization automática
+
+### Clerk
+- **Simplicidade**: Setup rápido e fácil
+- **Segurança**: JWT tokens seguros
+- **UI components**: Componentes prontos para frontend
+- **Escalabilidade**: Gerencia milhões de usuários
+
+### AWS ECS Fargate
+- **Serverless containers**: Sem gerenciamento de servidores
+- **Auto-scaling**: Escala automaticamente
+- **Cost-effective**: Paga apenas pelo que usa
+- **Integração**: Nativo com outros serviços AWS
+
+## 📈 Monitoramento & Logs
+
+### CloudWatch
+- Logs estruturados da aplicação
+- Métricas de performance
+- Alertas automáticos
+
+### Health Checks
+- Endpoint `/api/v1/health` para monitoramento
+- Verificação de conexão com banco
+- Status da aplicação
+
+## 🔒 Segurança
+
+- Autenticação JWT com Clerk
+- Validação de dados com class-validator
+- Helmet para headers de segurança
+- CORS configurado
+- Sanitização de uploads
+
+## 📞 Suporte
+
+Para dúvidas sobre a implementação, consulte:
+- Documentação da API: `/api/docs`
+- Logs da aplicação: CloudWatch ou `docker-compose logs`
+- Prisma Studio: `npm run prisma:studio`

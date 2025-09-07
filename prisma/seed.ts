@@ -152,8 +152,8 @@ async function main() {
     const card = await prisma.card.create({
       data: {
         ...cardData,
-        creatorId: user.id,
-        assigneeId: user.id,
+        creatorId: user.clerkId,
+        assigneeId: user.clerkId,
       },
     });
     console.log(`🎯 Created card: ${card.title} (${Object.keys(columnMap).find(key => columnMap[key].id === cardData.columnId)})`);
@@ -169,7 +169,7 @@ async function main() {
       data: {
         action: 'CREATED',
         details: 'Card criado via seed',
-        userId: user.id,
+        userId: user.clerkId,
         cardId: exampleCard.id,
       },
     });
@@ -178,7 +178,7 @@ async function main() {
       data: {
         action: 'UPDATED',
         details: 'Prioridade definida como HIGH',
-        userId: user.id,
+        userId: user.clerkId,
         cardId: exampleCard.id,
       },
     });
