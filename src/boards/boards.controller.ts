@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Logger
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { BoardsService } from './boards.service';
@@ -19,6 +20,7 @@ import { AuthGuard } from '../auth/auth.guard';
 @UseGuards(AuthGuard)
 @Controller('boards')
 export class BoardsController {
+  
   constructor(private readonly boardsService: BoardsService) {}
 
   @Post()
@@ -31,6 +33,7 @@ export class BoardsController {
   @ApiOperation({ summary: 'Get all boards' })
   findAll() {
     return this.boardsService.findAll();
+    console.log("BoardsController initialized");
   }
 
   @Get(':id')
