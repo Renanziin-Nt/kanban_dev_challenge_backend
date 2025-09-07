@@ -48,8 +48,8 @@ Sistema de Quadro Kanban colaborativo desenvolvido com NestJS, Prisma, e Postgre
 ## 🛠️ Setup Local
 
 ### Pré-requisitos
-- Node.js 22.18.0
-- Docker & Docker Compose
+- Node.js 22.18.0 ou superior
+- Docker & Docker Compose (opcional)
 - Conta no Clerk (para autenticação)
 - Conta no Supabase (para PostgreSQL)
 
@@ -57,116 +57,217 @@ Sistema de Quadro Kanban colaborativo desenvolvido com NestJS, Prisma, e Postgre
 ```bash
 git clone <repository-url>
 cd kanban-tech-challenge-backend
-```
 
-### 2. Instale as dependências
-```bash
-npm install
-```
+2. Configure as variáveis de ambiente
+bash
 
-### 3. Configure as variáveis de ambiente
-```bash
 cp .env.example .env
-```
 
-Edite o arquivo `.env` com suas configurações:
-```env
+Edite o arquivo .env com suas configurações:
+env
+
 # Application
 NODE_ENV=development
 PORT=3001
 FRONTEND_URL=http://localhost:3000
 
 # Database (Supabase PostgreSQL)
-DATABASE_URL="postgresql://username:password@db.supabase.co:5432/postgres?schema=public"
+DATABASE_URL="postgresql://username:password@db.supabase.co:6543/postgres?schema=public&pgbouncer=true"
+DIRECT_URL="postgresql://username:password@db.supabase.co:5432/postgres?schema=public"
 
 # Clerk Authentication
 CLERK_SECRET_KEY=sk_test_...
 CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_WEBHOOK_SECRET=whsec_...
 
 # File Uploads
 UPLOAD_DIR=./uploads
 MAX_FILE_SIZE=5242880
-```
 
-### 4. Configure o banco de dados
-```bash
-# Gerar o Prisma Client
-npm run prisma:generate
+3. Setup com Docker (Recomendado - Mais Fácil)
+Pré-requisitos
+
+    Docker e Docker Compose instalados
+
+Como executar
+bash
+
+# 1. Copiar e configurar variáveis de ambiente
+cp .env.example .env
+# Edite o .env com suas credenciais
+
+# 2. Executar com Docker Compose
+docker-compose up --build
+
+# 3. Acessar a aplicação
+# Backend: http://localhost:3001
+# Documentação: http://localhost:3001/api/docs
+
+Comandos Docker úteis
+bash
+
+# Executar em background
+docker-compose up -d
+
+# Ver logs
+docker-compose logs -f
+
+# Parar containers
+docker-compose down
+
+# Executar migrações manualmente (se necessário)
+docker-compose exec backend npx prisma migrate dev
+
+4. Setup Manual (Sem Docker)
+Instalar dependências
+bash
+
+npm install
+
+Configurar banco de dados
+bash
+
+# Gerar Prisma Client
+npx prisma generate
 
 # Executar migrações
-npm run prisma:migrate
+npx prisma migrate dev
 
-# (Opcional) Abrir Prisma Studio
-npm run prisma:studio
-```
+# Popular banco com dados de exemplo (opcional)
+npm run seed
 
-### 5. Execute a aplicação
+Executar aplicação
+bash
 
-#### Desenvolvimento local
-```bash
+# Modo desenvolvimento (hot reload)
 npm run start:dev
-```
 
-#### Com Docker Compose
-```bash
-docker-compose up -d
-```
+# Modo produção
+npm run build
+npm run start:prod
 
-A API estará disponível em: `http://localhost:3001`
-Documentação Swagger: `http://localhost:3001/api/docs`
+5. Configurar Webhooks do Clerk com Ngrok
 
-## 📚 Estrutura da API
+Para desenvolvimento local, você precisa configurar webhooks do Clerk:
+Instalar Ngrok
+bash
 
-### Endpoints Principais
+# Instalar ngrok globalmente
+npm install -g ngrok
 
-#### Authentication
-- Todas as rotas (exceto `/health`) requerem token JWT do Clerk
+# Ou usar npx
+npx ngrok@latest http 3001
 
-#### Boards
-- `GET /api/v1/boards` - Listar quadros
-- `POST /api/v1/boards` - Criar quadro
-- `GET /api/v1/boards/:id` - Obter quadro específico
-- `PATCH /api/v1/boards/:id` - Atualizar quadro
-- `DELETE /api/v1/boards/:id` - Deletar quadro
+Iniciar Ngrok
+bash
 
-#### Columns
-- `GET /api/v1/columns?boardId=:id` - Listar colunas de um quadro
-- `POST /api/v1/columns` - Criar coluna
-- `PATCH /api/v1/columns/:id` - Atualizar coluna
-- `DELETE /api/v1/columns/:id` - Deletar coluna
-- `POST /api/v1/columns/reorder/:boardId` - Reordenar colunas
+# Em um terminal separado, execute:
+ngrok http 3001
 
-#### Cards
-- `GET /api/v1/cards` - Listar cards
-- `POST /api/v1/cards` - Criar card
-- `GET /api/v1/cards/:id` - Obter card específico
-- `PATCH /api/v1/cards/:id` - Atualizar card
-- `DELETE /api/v1/cards/:id` - Deletar card
-- `POST /api/v1/cards/move` - Mover card (drag & drop)
-- `GET /api/v1/cards/:id/logs` - Histórico do card
-- `GET /api/v1/cards/board/:boardId/activity` - Atividade do quadro
+Configurar Webhook no Clerk Dashboard
 
-#### Users
-- `GET /api/v1/users/me` - Perfil do usuário atual
-- `GET /api/v1/users` - Listar usuários
+    Acesse Clerk Dashboard
 
-#### Uploads
-- `POST /api/v1/uploads/:cardId` - Upload de arquivo
-- `GET /api/v1/uploads/card/:cardId` - Listar anexos do card
-- `GET /api/v1/uploads/file/:filename` - Servir arquivo
-- `DELETE /api/v1/uploads/attachment/:id` - Deletar anexo
+    Vá para sua aplicação > Webhooks
 
-## 🏗️ Implementação de Drag & Drop
+    Clique em "Add Endpoint"
+
+    URL do endpoint: https://seu-subdominio.ngrok.io/api/v1/webhooks/clerk
+
+    Selecione os eventos: user.created, user.updated, user.deleted
+
+    Cole o CLERK_WEBHOOK_SECRET do seu .env
+
+Testar Webhook
+bash
+
+# Verificar se o webhook está funcionando
+curl -X POST http://localhost:3001/api/v1/webhooks/clerk \
+  -H "Content-Type: application/json" \
+  -H "svix-id: test-id" \
+  -H "svix-timestamp: test-timestamp" \
+  -H "svix-signature: test-signature" \
+  -d '{"type": "user.created", "data": {"id": "test-user-id"}}'
+
+📚 Estrutura da API
+Endpoints Principais
+Authentication
+
+    Todas as rotas (exceto /health) requerem token JWT do Clerk
+
+Boards
+
+    GET /api/v1/boards - Listar quadros
+
+    POST /api/v1/boards - Criar quadro
+
+    GET /api/v1/boards/:id - Obter quadro específico
+
+    PATCH /api/v1/boards/:id - Atualizar quadro
+
+    DELETE /api/v1/boards/:id - Deletar quadro
+
+Columns
+
+    GET /api/v1/columns?boardId=:id - Listar colunas de um quadro
+
+    POST /api/v1/columns - Criar coluna
+
+    PATCH /api/v1/columns/:id - Atualizar coluna
+
+    DELETE /api/v1/columns/:id - Deletar coluna
+
+    POST /api/v1/columns/reorder/:boardId - Reordenar colunas
+
+Cards
+
+    GET /api/v1/cards - Listar cards
+
+    POST /api/v1/cards - Criar card
+
+    GET /api/v1/cards/:id - Obter card específico
+
+    PATCH /api/v1/cards/:id - Atualizar card
+
+    DELETE /api/v1/cards/:id - Deletar card
+
+    POST /api/v1/cards/move - Mover card (drag & drop)
+
+    GET /api/v1/cards/:id/logs - Histórico do card
+
+    GET /api/v1/cards/board/:boardId/activity - Atividade do quadro
+
+Users
+
+    GET /api/v1/users/me - Perfil do usuário atual
+
+    GET /api/v1/users - Listar usuários
+
+Uploads
+
+    POST /api/v1/uploads/:cardId - Upload de arquivo
+
+    GET /api/v1/uploads/card/:cardId - Listar anexos do card
+
+    GET /api/v1/uploads/file/:filename - Servir arquivo
+
+    DELETE /api/v1/uploads/attachment/:id - Deletar anexo
+
+🏗️ Implementação de Drag & Drop
 
 O sistema de drag & drop foi implementado com:
 
-1. **Posicionamento baseado em índices**: Cada card tem uma `position` numérica
-2. **Transações de banco**: Movimentações são atômicas
-3. **Reordenação automática**: Posições são recalculadas automaticamente
-4. **Logs de atividade**: Todo movimento é registrado
+    Posicionamento baseado em índices: Cada card tem uma position numérica
 
-### Como funciona o movimento de cards:
-```typescript
+    Transações de banco: Movimentações são atômicas
+
+    Reordenação automática: Posições são recalculadas automaticamente
+
+    Logs de atividade: Todo movimento é registrado
+
+Como funciona o movimento de cards:
+typescript
+
 // Movimento entre colunas diferentes
 1. Decrementar posições na coluna origem
 2. Incrementar posições na coluna destino
@@ -177,79 +278,25 @@ O sistema de drag & drop foi implementado com:
 1. Calcular direção do movimento (cima/baixo)
 2. Ajustar posições dos cards afetados
 3. Atualizar posição do card movido
-```
 
-## 📊 Gerenciamento de Estado
+📊 Gerenciamento de Estado
+Estado das Colunas
 
-### Estado das Colunas
-- Posições são mantidas em ordem crescente
-- Reordenação automática quando colunas são adicionadas/removidas
+    Posições são mantidas em ordem crescente
 
-### Estado dos Cards
-- Sistema de posicionamento relativo dentro de cada coluna
-- Transações garantem consistência durante movimentações
-- Logs completos de todas as alterações
+    Reordenação automática quando colunas são adicionadas/removidas
 
-## 🔄 Pipeline de CI/CD
+Estado dos Cards
 
-### Estratégia de Deploy
+    Sistema de posicionamento relativo dentro de cada coluna
 
-1. **Desenvolvimento Local**
-   - Docker Compose para ambiente completo
-   - Hot reload com `npm run start:dev`
-   - Banco PostgreSQL local
+    Transações garantem consistência durante movimentações
 
-2. **CI/CD Pipeline (GitHub Actions)**
-   ```yaml
-   Trigger: Push para main branch
-   Steps:
-   1. Run tests & linting
-   2. Build Docker image
-   3. Push to AWS ECR
-   4. Update ECS task definition
-   5. Deploy to ECS cluster
-   ```
+    Logs completos de todas as alterações
 
-3. **Infraestrutura AWS**
-   - **VPC**: Rede isolada com subnets públicas
-   - **ECS Fargate**: Containers serverless
-   - **Application Load Balancer**: Distribuição de tráfego
-   - **ECR**: Registry privado de containers
-   - **CloudWatch**: Logs e monitoramento
+🔧 Scripts Disponíveis
+bash
 
-### Próximos Passos para Melhorias
-
-Se houvesse mais tempo, implementaria:
-
-1. **Performance & Escalabilidade**
-   - Cache com Redis para consultas frequentes
-   - Pagination para listas grandes
-   - WebSockets para atualizações em tempo real
-   - CDN para servir arquivos estáticos
-
-2. **Funcionalidades Avançadas**
-   - Sistema de comentários nos cards
-   - Notificações por email
-   - Templates de quadros
-   - Relatórios e analytics
-   - Busca avançada e filtros
-
-3. **Segurança & Observabilidade**
-   - Rate limiting
-   - Audit logs detalhados
-   - Métricas de performance
-   - Alertas de monitoramento
-   - Backup automático
-
-4. **DevOps & Infraestrutura**
-   - Auto-scaling baseado em métricas
-   - Blue-green deployment
-   - Disaster recovery
-   - Multi-region deployment
-
-## 🔧 Scripts Disponíveis
-
-```bash
 # Desenvolvimento
 npm run start:dev          # Iniciar em modo desenvolvimento
 npm run start:debug       # Iniciar com debugger
@@ -273,11 +320,15 @@ npm run prisma:deploy      # Deploy migrações (produção)
 # Code Quality
 npm run lint               # Executar ESLint
 npm run format             # Formatar código
-```
 
-## 🐳 Docker Commands
+# Docker
+npm run docker:build       # Build da imagem Docker
+npm run docker:run         # Executar container
+npm run docker:compose     # Executar com Docker Compose
 
-```bash
+🐳 Docker Commands
+bash
+
 # Desenvolvimento com Docker Compose
 docker-compose up -d                    # Iniciar todos os serviços
 docker-compose logs -f backend          # Ver logs do backend
@@ -285,90 +336,85 @@ docker-compose exec backend npm run prisma:migrate  # Executar migrações
 
 # Build manual
 docker build -t kanban-backend .
-docker run -p 3001:3001 kanban-backend
-```
+docker run -p 3001:3001 --env-file .env kanban-backend
 
-## 🌐 Deploy na AWS
 
-### Pré-requisitos para Deploy
-1. AWS CLI configurado
-2. Terraform instalado
-3. Secrets configurados no GitHub:
-   - `AWS_ACCESS_KEY_ID`
-   - `AWS_SECRET_ACCESS_KEY`
+🎯 Justificativa das Escolhas Tecnológicas
+NestJS
 
-### Passos para Deploy
+    Escalabilidade: Arquitetura modular inspirada no Angular
 
-1. **Provisionar infraestrutura**
-```bash
-cd terraform
-terraform init
-terraform plan
-terraform apply
-```
+    TypeScript nativo: Type safety e melhor DX
 
-2. **Configurar secrets no AWS Systems Manager**
-```bash
-aws ssm put-parameter --name "/kanban/database-url" --value "your-supabase-url" --type "SecureString"
-aws ssm put-parameter --name "/kanban/clerk-secret-key" --value "your-clerk-key" --type "SecureString"
-aws ssm put-parameter --name "/kanban/frontend-url" --value "your-frontend-url" --type "SecureString"
-```
+    Ecossistema robusto: Decorators, Guards, Interceptors
 
-3. **Push para main branch**
-```bash
-git push origin main
-# GitHub Actions irá automaticamente fazer o deploy
-```
+    Swagger integrado: Documentação automática
 
-## 🎯 Justificativa das Escolhas Tecnológicas
+Prisma
 
-### NestJS
-- **Escalabilidade**: Arquitetura modular inspirada no Angular
-- **TypeScript nativo**: Type safety e melhor DX
-- **Ecossistema robusto**: Decorators, Guards, Interceptors
-- **Swagger integrado**: Documentação automática
+    Type-safe: Client gerado automaticamente
 
-### Prisma
-- **Type-safe**: Client gerado automaticamente
-- **Migrations**: Controle de versão do schema
-- **Studio**: Interface visual para o banco
-- **Performance**: Query optimization automática
+    Migrations: Controle de versão do schema
 
-### Clerk
-- **Simplicidade**: Setup rápido e fácil
-- **Segurança**: JWT tokens seguros
-- **UI components**: Componentes prontos para frontend
-- **Escalabilidade**: Gerencia milhões de usuários
+    Studio: Interface visual para o banco
 
-### AWS ECS Fargate
-- **Serverless containers**: Sem gerenciamento de servidores
-- **Auto-scaling**: Escala automaticamente
-- **Cost-effective**: Paga apenas pelo que usa
-- **Integração**: Nativo com outros serviços AWS
+    Performance: Query optimization automática
 
-## 📈 Monitoramento & Logs
+Clerk
 
-### CloudWatch
-- Logs estruturados da aplicação
-- Métricas de performance
-- Alertas automáticos
+    Simplicidade: Setup rápido e fácil
 
-### Health Checks
-- Endpoint `/api/v1/health` para monitoramento
-- Verificação de conexão com banco
-- Status da aplicação
+    Segurança: JWT tokens seguros
 
-## 🔒 Segurança
+    UI components: Componentes prontos para frontend
 
-- Autenticação JWT com Clerk
-- Validação de dados com class-validator
-- Helmet para headers de segurança
-- CORS configurado
-- Sanitização de uploads
+    Escalabilidade: Gerencia milhões de usuários
 
-## 📞 Suporte
+AWS ECS Fargate
+
+    Serverless containers: Sem gerenciamento de servidores
+
+    Auto-scaling: Escala automaticamente
+
+    Cost-effective: Paga apenas pelo que usa
+
+    Integração: Nativo com outros serviços AWS
+
+📈 Monitoramento & Logs
+CloudWatch
+
+    Logs estruturados da aplicação
+
+    Métricas de performance
+
+    Alertas automáticos
+
+Health Checks
+
+    Endpoint /api/v1/health para monitoramento
+
+    Verificação de conexão com banco
+
+    Status da aplicação
+
+🔒 Segurança
+
+    Autenticação JWT com Clerk
+
+    Validação de dados com class-validator
+
+    Helmet para headers de segurança
+
+    CORS configurado
+
+    Sanitização de uploads
+
+📞 Suporte
 
 Para dúvidas sobre a implementação, consulte:
-- Documentação da API: `/api/docs`
-- Logs da aplicação: CloudWatch ou `docker-compose logs`
-- Prisma Studio: `npm run prisma:studio`
+
+    Documentação da API: /api/docs
+
+    Logs da aplicação: docker-compose logs
+
+    Prisma Studio: npm run prisma:studio
