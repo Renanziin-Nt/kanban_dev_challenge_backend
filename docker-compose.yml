@@ -1,12 +1,46 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: kanban-postgres
+    environment:
+      POSTGRES_DB: kanban
+      POSTGRES_USER: kanban_user
+      POSTGRES_PASSWORD: kanban_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kanban_user -d kanban"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build: .
+    container_name: kanban-backend
     ports:
       - "3001:3001"
-    env_file:
-      - .env
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - FRONTEND_URL=http://localhost:3000
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=#{DIRECT_URL}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
+      - CLERK_WEBHOOK_SECRET=${CLERK_WEBHOOK_SECRET}
+      - UPLOAD_DIR=./uploads
+      - MAX_FILE_SIZE=5242880
     volumes:
       - ./uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  postgres_data:
